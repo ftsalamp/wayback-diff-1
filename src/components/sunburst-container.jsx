@@ -1,7 +1,7 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 import D3Sunburst from './d3-sunburst.jsx';
-import {hammingDistance} from '../js/utils.js';
+import {similarity} from '../js/utils.js';
 import '../css/diffgraph.css';
 import { handleRelativeURL, checkResponse } from '../js/utils.js';
 import ErrorMessage from './errors.jsx';
@@ -160,11 +160,15 @@ export default class SunburstContainer extends React.Component {
   }
 
   _calcDistance(json, timestamp){
-    this._minDistance = 64;
+    this._minDistance = 100;
+    this._maxDistance = 0;
     for (var i = 0; i<json.length; i++){
-      json[i][1] = hammingDistance(timestamp[0][1], json[i][1]);
+      json[i][1] = similarity(timestamp[0], json[i][1])*100;
       if (this._minDistance > json[i][1] && json[i][1] !== 0) {
         this._minDistance = json[i][1];
+      }
+      if (this._maxDistance < json[i][1]) {
+        this._maxDistance = json[i][1];
       }
     }
     return json;
@@ -178,19 +182,30 @@ export default class SunburstContainer extends React.Component {
     var fifthLevel = [];
 
     const colors = ['#dddddd', '#f1e777', '#c5d56c', '#8db865', '#6b9775', '#4d7a83'];
+    let step = 20;
+    this._maxDistance = Math.round(this._maxDistance);
+    this._minDistance = Math.round(this._minDistance);
+    let diffLevels = this._maxDistance - this._minDistance;
+    console.log(this._maxDistance);
+    console.log(this._minDistance);
+    console.log(diffLevels);
 
+    if (diffLevels > 5) {
+      step = Math.ceil(diffLevels/5);
+    }
+    console.log(step);
     for (var i = 0; i<json.length; i++){
       if (json[i][1] !== 0) {
-        if (json[i][1] <= this._minDistance) {
-          firstLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[1], children: []});
-        } else if (json[i][1] <= this._minDistance + 2) {
-          secondLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[2], children: []});
-        } else if (json[i][1] <= this._minDistance + 4) {
-          thirdLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[3], children: []});
-        } else if (json[i][1] <= this._minDistance + 6) {
-          fourthLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[4], children: []});
-        } else {
+        if (json[i][1] < this._minDistance + step) {
           fifthLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[5], children: []});
+        } else if (json[i][1] < this._minDistance + 2*step) {
+          fourthLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[4], children: []});
+        } else if (json[i][1] < this._minDistance + 3*step) {
+          thirdLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[3], children: []});
+        } else if (json[i][1] < this._minDistance + 4*step) {
+          secondLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[2], children: []});
+        } else {
+          firstLevel.push({name: json[i][0], bigness: 10, hamDist: json[i][1], clr: colors[1], children: []});
         }
       }
     }
@@ -211,6 +226,29 @@ export default class SunburstContainer extends React.Component {
       fifthLevel.length = this.props.conf.maxSunburstLevelLength;
     }
 
+
+    if (firstLevel.length === 0){
+      firstLevel = secondLevel;
+      secondLevel = thirdLevel;
+      thirdLevel = fourthLevel;
+      fourthLevel= fifthLevel;
+      fifthLevel = [];
+    }
+    if (secondLevel.length === 0){
+      secondLevel = thirdLevel;
+      thirdLevel = fourthLevel;
+      fourthLevel= fifthLevel;
+      fifthLevel = [];
+    }
+    if (thirdLevel.length === 0){
+      thirdLevel = fourthLevel;
+      fourthLevel = fifthLevel;
+      fifthLevel = [];
+    }
+    if (fourthLevel.length === 0){
+      fourthLevel= fifthLevel;
+      fifthLevel = [];
+    }
 
     for (i = 0; i<fifthLevel.length; i++) {
       let mod = i % fourthLevel.length;
