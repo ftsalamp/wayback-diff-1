@@ -11,16 +11,16 @@
     "babel-preset-stage-0": "6.24.1",
     "browser-sync": "^2.24.4",
     "cssnano": "^4.0.0-rc.2",
-    "html-webpack-plugin": "^3.2.0",
+    "html-webpack-plugin": "^4.0.0-beta.2",
     "npm-run-all": "4.1.2",
     "prop-types": "^15.6.1",
     "qs": "latest",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
     "react-router-dom": "^4.2.2",
-    "react-scripts": "1.1.4",
+    "react-scripts": "^2.0.5",
     "react-vis": "^1.11.1",
-    "rollup": "^0.59.2",
+    "rollup": "^0.66.6",
     "rollup-plugin-babel": "^3.0.4",
     "rollup-plugin-commonjs": "^9.1.3",
     "rollup-plugin-image": "^1.0.2",
@@ -29,9 +29,8 @@
     "rollup-plugin-replace": "^2.0.0",
     "rollup-plugin-url": "^1.4.0",
     "rollup-watch": "4.3.1",
-    "snazzy": "6.0.0",
-    "standard": "10.0.3",
-    "webpack": "^3.12.0"
+    "snazzy": "^8.0.0",
+    "standard": "^12.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -47,7 +46,6 @@
     "babel-plugin-css-modules-transform": "^1.6.1",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.6.0",
-    "eslint": "^4.19.1",
     "eslint-plugin-mocha": "^5.0.0",
     "jest-environment-enzyme": "^7.0.0",
     "jest-enzyme": "^7.0.0",
@@ -56,5 +54,11 @@
     "rollup-plugin-node-resolve": "^3.3.0",
     "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.9"
-  }
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }
