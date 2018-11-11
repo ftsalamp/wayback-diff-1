@@ -32,3 +32,12 @@
     margin: 0 8px;
     height: 20px;
 }
+
+.sunburst-container{
+    margin: auto;
+    width: 50%;
+}
+
+.rv-sunburst {
+    margin: 0 auto;
+}

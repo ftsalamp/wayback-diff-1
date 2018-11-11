@@ -8,7 +8,7 @@ import SideBySideRenderedDiff from './side-by-side-rendered-diff.jsx';
 import ChangesOnlyDiff from './changes-only-diff.jsx';
 import RawVersion from './raw-version.jsx';
 import SideBySideRawVersions from './side-by-side-raw-versions.jsx';
-import { checkResponse } from '../js/utils.js';
+import { checkResponse, fetch_with_timeout } from '../js/utils.js';
 
 /**
  * @typedef DiffViewProps
@@ -186,8 +186,8 @@ export default class DiffView extends React.Component {
     this.setState({diffData: null});
     if (!diffTypes[diffType].diffService) {
       return Promise.all([
-        fetch(a.uri, {mode: 'cors'}),
-        fetch(b.uri, {mode: 'cors'})
+        fetch_with_timeout(fetch(a.uri, {mode: 'cors'})),
+        fetch_with_timeout(fetch(b.uri, {mode: 'cors'}))
       ])
         .then(([rawA, rawB]) => {
           return {raw: true, rawA, rawB};
@@ -196,8 +196,8 @@ export default class DiffView extends React.Component {
         .then(data => this.setState({diffData: data}));
     }
     var url = `${this.props.webMonitoringProcessingURL}/`;
-    url += `${diffTypes[diffType].diffService}?format=json&include=all&a=${a}&b=${b}`;
-    fetch(url)
+    url += `${diffTypes[diffType].diffService}?format=json&pass_headers=cookie&include=all&a=${a}&b=${b}`;
+    fetch_with_timeout(fetch(url, {credentials: 'include'}))
       .then(response => {return checkResponse(response);})
       .then(response => response.json())
       .then((data) => {

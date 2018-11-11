@@ -3,8 +3,9 @@ import { Redirect } from 'react-router-dom';
 import D3Sunburst from './d3-sunburst.jsx';
 import {similarity} from '../js/utils.js';
 import '../css/diffgraph.css';
-import { handleRelativeURL, checkResponse } from '../js/utils.js';
+import { handleRelativeURL, checkResponse, fetch_with_timeout } from '../js/utils.js';
 import ErrorMessage from './errors.jsx';
+import PropTypes from 'prop-types';
 
 /**
  * Container of d3 Sunburst diagram
@@ -33,7 +34,7 @@ export default class SunburstContainer extends React.Component {
     }
     if (this.state.simhashData) {
       return (
-        <div style={{display: 'inline-block'}}>
+        <div className="sunburst-container">
           <D3Sunburst urlPrefix={this.props.conf.urlPrefix} url={this.props.url} simhashData={this.state.simhashData}/>
           <div className="heat-map-legend">
             <div className="heat-map-legend-caption">Variation</div>
@@ -71,8 +72,8 @@ export default class SunburstContainer extends React.Component {
     if (this.props.fetchSnapshotCallback) {
       promise = this.props.fetchSnapshotCallback(this.props.timestamp);
     } else {
-      let url = handleRelativeURL(this.props.conf.snapshotsPrefix) + this.props.timestamp + '/' + this.props.url;
-      promise = fetch(url, {redirect: 'follow'});
+      let url = handleRelativeURL(this.props.conf.snapshotsPrefix) + this.props.timestamp + '/' + encodeURIComponent(this.props.url);
+      promise = fetch_with_timeout(fetch(url, {redirect: 'follow'}));
     }
     promise.then(response => {return checkResponse(response);})
       .then(response => {
@@ -94,8 +95,8 @@ export default class SunburstContainer extends React.Component {
   }
 
   _fetchTimestampSimhashData () {
-    const url = `${this.props.conf.waybackDiscoverDiff}/simhash?url=${this.props.url}&timestamp=${this.props.timestamp}`;
-    fetch(url).then(response => {return checkResponse(response);})
+    const url = `${this.props.conf.waybackDiscoverDiff}/simhash?url=${encodeURIComponent(this.props.url)}&timestamp=${this.props.timestamp}`;
+    fetch_with_timeout(fetch(url)).then(response => {return checkResponse(response);})
       .then(response => response.json())
       .then((jsonResponse) => {
         var json = this._decodeJson(jsonResponse);
@@ -105,9 +106,8 @@ export default class SunburstContainer extends React.Component {
   }
 
   _fetchSimhashData (timestamp) {
-    const url = `${this.props.conf.waybackDiscoverDiff}/simhash?url=${this.props.url}&year=${this.props.timestamp.substring(0, 4)}`;
-
-    fetch(url).then(response => {return checkResponse(response);})
+    const url = `${this.props.conf.waybackDiscoverDiff}/simhash?url=${encodeURIComponent(this.props.url)}&year=${this.props.timestamp.substring(0, 4)}`;
+    fetch_with_timeout(fetch(url)).then(response => {return checkResponse(response);})
       .then(response => response.json())
       .then((jsonResponse) => {
         var json = this._decodeJson(jsonResponse);
@@ -276,3 +276,12 @@ export default class SunburstContainer extends React.Component {
   }
 
 }
+
+SunburstContainer.propTypes = {
+
+  timestamp: PropTypes.string.isRequired,
+  url: PropTypes.string.isRequired,
+  conf: PropTypes.object.isRequired,
+  fetchSnapshotCallback: PropTypes.func,
+  loader: PropTypes.element
+};

@@ -1,10 +1,11 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import DiffView from './diff-view.jsx';
 import '../css/diff-container.css';
 import TimestampHeader from './timestamp-header.jsx';
 import DiffFooter from './footer.jsx';
 import { Redirect } from 'react-router-dom';
-import {isStrUrl, handleRelativeURL, checkResponse} from '../js/utils.js';
+import {isStrUrl, handleRelativeURL, checkResponse, fetch_with_timeout} from '../js/utils.js';
 import NoSnapshotURL from './no-snapshot-url.jsx';
 import ErrorMessage from './errors.jsx';
 
@@ -62,9 +63,7 @@ export default class DiffContainer extends React.Component {
         </div>
       );
     }
-    if (!this._timestampsValidated) {
-      {this._checkTimestamps();}
-    }
+    if (!this._timestampsValidated) {this._checkTimestamps();}
     if (this.props.timestampA && this.props.timestampB) {
       return (
         <div className="diffcontainer-view">
@@ -133,8 +132,8 @@ export default class DiffContainer extends React.Component {
     if (this.props.fetchSnapshotCallback){
       this._handleSnapshotFetch(this.props.fetchSnapshotCallback(timestamp));
     }else {
-      let url = handleRelativeURL(this.props.conf.snapshotsPrefix) + timestamp + '/' + this.props.url;
-      this._handleSnapshotFetch(fetch(url));
+      const url = handleRelativeURL(this.props.conf.snapshotsPrefix) + timestamp + '/' + encodeURIComponent(this.props.url);
+      this._handleSnapshotFetch(fetch_with_timeout(fetch(url)));
     }
 
     const Loader = () => this.props.loader;
@@ -160,8 +159,8 @@ export default class DiffContainer extends React.Component {
 
   prepareDiffView(){
     if (!this.state.showError){
-      let urlA = handleRelativeURL(this.props.conf.snapshotsPrefixIframe) + this.props.timestampA + '/' + encodeURIComponent(this.props.url);
-      let urlB = handleRelativeURL(this.props.conf.snapshotsPrefixIframe) + this.props.timestampB + '/' + encodeURIComponent(this.props.url);
+      let urlA = handleRelativeURL(this.props.conf.snapshotsPrefix) + this.props.timestampA + '/' + encodeURIComponent(this.props.url);
+      let urlB = handleRelativeURL(this.props.conf.snapshotsPrefix) + this.props.timestampB + '/' + encodeURIComponent(this.props.url);
 
       return(<DiffView webMonitoringProcessingURL={handleRelativeURL(this.props.conf.webMonitoringProcessingURL)}
         page={{url: encodeURIComponent(this.props.url)}} diffType={'SIDE_BY_SIDE_RENDERED'} a={urlA} b={urlB}
@@ -213,8 +212,8 @@ export default class DiffContainer extends React.Component {
     if (this.props.fetchSnapshotCallback) {
       return this._handleTimestampValidationFetch(this.props.fetchSnapshotCallback(timestamp), timestamp, fetchedTimestamps, position);
     }
-    let url = handleRelativeURL(this.props.conf.snapshotsPrefix) + timestamp + '/' + this.props.url;
-    return this._handleTimestampValidationFetch(fetch(url, {redirect: 'follow'}), timestamp, fetchedTimestamps, position);
+    const url = handleRelativeURL(this.props.conf.snapshotsPrefix) + timestamp + '/' + encodeURIComponent(this.props.url);
+    return this._handleTimestampValidationFetch(fetch_with_timeout(fetch(url, {redirect: 'follow'})), timestamp, fetchedTimestamps, position);
   }
 
   _setNewURL(fetchedTimestampA, fetchedTimestampB){
@@ -246,3 +245,21 @@ export default class DiffContainer extends React.Component {
   }
 
 }
+
+DiffContainer.propTypes = {
+  url: PropTypes.string.isRequired,
+  timestampA: PropTypes.string,
+  timestampB: PropTypes.string,
+  conf: PropTypes.object.isRequired,
+  loader: PropTypes.element,
+  fetchCDXCallback: PropTypes.func,
+  fetchSnapshotCallback: PropTypes.func,
+
+  noTimestamps: (props, propName, componentName) => {
+    if (props.noTimestamps && !props.noTimestamps.isPrototypeOf(Boolean)){
+      return new Error(`noTimestamps specified in '${componentName} should be boolean'.`);
+    } else if (!(props.noTimestamps in window || props.timestampA in window || props.timestampB in window)) {
+      return new Error(`At least one of props 'timestampA' or 'timestampB' or noTimestamps must be specified in '${componentName}'.`);
+    }
+  }
+};
