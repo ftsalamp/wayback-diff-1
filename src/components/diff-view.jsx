@@ -8,6 +8,7 @@ import SideBySideRenderedDiff from './side-by-side-rendered-diff.jsx';
 import ChangesOnlyDiff from './changes-only-diff.jsx';
 import RawVersion from './raw-version.jsx';
 import SideBySideRawVersions from './side-by-side-raw-versions.jsx';
+import { checkResponse, fetch_with_timeout } from '../js/utils.js';
 
 /**
  * @typedef DiffViewProps
@@ -162,8 +163,8 @@ export default class DiffView extends React.Component {
    */
   _propsSpecifySameDiff (newProps, props) {
     props = props || this.props;
-    return props.a.uuid === newProps.a.uuid
-      && props.b.uuid === newProps.b.uuid
+    return props.a === newProps.a
+      && props.b === newProps.b
       && props.diffType === newProps.diffType;
   }
 
@@ -185,8 +186,8 @@ export default class DiffView extends React.Component {
     this.setState({diffData: null});
     if (!diffTypes[diffType].diffService) {
       return Promise.all([
-        fetch(a.uri, {mode: 'cors'}),
-        fetch(b.uri, {mode: 'cors'})
+        fetch_with_timeout(fetch(a.uri, {mode: 'cors'})),
+        fetch_with_timeout(fetch(b.uri, {mode: 'cors'}))
       ])
         .then(([rawA, rawB]) => {
           return {raw: true, rawA, rawB};
@@ -195,9 +196,9 @@ export default class DiffView extends React.Component {
         .then(data => this.setState({diffData: data}));
     }
     var url = `${this.props.webMonitoringProcessingURL}/`;
-    url += `${diffTypes[diffType].diffService}?format=json&include=all&a=${a}&b=${b}`;
-    fetch(url)
-      .then(response => {return this._checkResponse(response);})
+    url += `${diffTypes[diffType].diffService}?format=json&pass_headers=cookie&include=all&a=${a}&b=${b}`;
+    fetch_with_timeout(fetch(url, {credentials: 'include'}))
+      .then(response => {return checkResponse(response);})
       .then(response => response.json())
       .then((data) => {
         this.setState({
@@ -207,19 +208,9 @@ export default class DiffView extends React.Component {
       .catch(error => {this._errorHandled(error.message);});
   }
 
-  _checkResponse(response) {
-    if (response) {
-      if (!response.ok) {
-        throw Error(response.status);
-      }
-      return response;
-    }
-  }
-
   _errorHandled(error) {
     if (this.isMountedNow) {
       this.props.errorHandledCallback(error);
-      // console.log('diffview--setState');
       this.setState({showError: true});
     }
   }

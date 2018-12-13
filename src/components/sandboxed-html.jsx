@@ -22,6 +22,12 @@ export default class SandboxedHtml extends React.PureComponent {
     this._frame = null;
   }
 
+
+  shouldComponentUpdate(){
+    this.addLoaderImg();
+    return true;
+  }
+
   componentDidMount () {
     this._updateContent();
     this.addLoaderImg();
@@ -32,7 +38,7 @@ export default class SandboxedHtml extends React.PureComponent {
   }
 
   render () {
-    return <iframe height={window.innerHeight} scrolling={'no'} onLoad={()=>{this.handleHeight();
+    return <iframe height={window.innerHeight} onLoad={()=>{this.handleHeight();
       this.removeLoaderImg();}}
     sandbox="allow-same-origin allow-forms allow-scripts"
     ref={frame => this._frame = frame}
@@ -51,11 +57,15 @@ export default class SandboxedHtml extends React.PureComponent {
   }
 
   handleHeight () {
-    let offsetHeight = this._frame.contentDocument.scrollingElement.offsetHeight;
+    let offsetHeight = this._frame.contentDocument.documentElement.scrollHeight;
+    let offsetWidth = this._frame.contentDocument.documentElement.scrollWidth;
     if (offsetHeight > 0.1 * this._frame.height) {
-      this._frame.height = offsetHeight;
+      this._frame.height = offsetHeight + (offsetHeight * 0.01);
     } else {
       this._frame.height = 0.5 * this._frame.height;
+    }
+    if (offsetWidth > this._frame.clientWidth) {
+      this._frame.width = offsetWidth;
     }
   }
 
@@ -65,13 +75,12 @@ export default class SandboxedHtml extends React.PureComponent {
 
   addLoaderImg () {
     let width = this._frame.contentDocument.scrollingElement.offsetWidth;
-    let height = this._frame.contentDocument.scrollingElement.offsetHeight;
 
     let centerX = this._frame.offsetLeft + width / 2;
-    let centerY = this._frame.offsetTop + height / 2;
 
     var elem = document.createElement('img');
-    var cssText = 'position:absolute;left:'+centerX+'px;top:'+centerY+'px;';
+    elem.className = 'waybackDiffIframeLoader';
+    var cssText = 'position:absolute;left:'+centerX+'px;top:50%;';
     elem.setAttribute('style', cssText);
     elem.src = this.props.iframeLoader;
     document.body.appendChild(elem);

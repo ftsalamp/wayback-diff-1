@@ -9,9 +9,10 @@ import React from 'react';
 export default class ErrorMessage extends React.Component {
 
   render () {
+    console.warn(this.props.code);
     if (this.props.code === '404') {
       return (
-        <div className='alert alert-warning' role='alert'>The Wayback Machine doesn't have {this.props.site} archived.</div>
+        <div className='alert alert-warning' role='alert'>The Wayback Machine doesn't have {this.props.url} archived.</div>
       );
     }
     return (
