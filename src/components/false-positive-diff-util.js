@@ -4,6 +4,27 @@ import * as xpath from 'simple-xpath-position';
 const absoluteUrlRegex = new RegExp(/\/\/web\.archive\.org\/web\/\d{14}/gm);
 const relativeUrlRegex = new RegExp(window.location.origin+ '/web/\\d{14}', 'gm');
 
+function addFoundElement (element, arrayToAddTo) {
+  element.childNodes.forEach(function (child) {
+    const result = checkTimestampInLink(child);
+    if (_.isNil(result)) {
+      if (child.parentNode.childNodes.length > 0) {
+        child.parentNode.childNodes.forEach(function (newChild) {
+          addFoundElement (newChild, arrayToAddTo);
+        });
+      }
+    } else {
+      let url = getWBMCleanURL(result);
+      if (_.isNil(url)) {
+        url = getWBMCleanURL(result.parentNode.parentNode);
+      }
+      if (!_.isNil(url)) {
+        arrayToAddTo.push([result, normalizeURL(url)]);
+      }
+    }
+  });
+}
+
 /**
  * This function will parse all of the markup added by web-monitoring-processing in order to remove any false positive
  * markup information (for example when comparing links to the same destination but with different timestamps
@@ -26,21 +47,14 @@ export function getTimestampCleanDiff(insertions, deletions) {
   // meaning that they highlight content
   for(let i=0, len = del.length; i < len; i++) {
     if (_.isEqual(del[i].className, 'wm-diff') && del[i].childNodes.length > 0) {
-      del[i].childNodes.forEach(function (child) {
-        const result = checkTimestampInLink(child);
-        //constant result might be nil, so we wouldn't want to add nill values to the array
-        addNotNill(foundDel, result);
-      });
+      addFoundElement(del[i], foundDel);
     }
   }
   //Get all of web-monitoring-processing's ins elements that link to a resource and have at least one child,
   // meaning that they highlight content
   for(let i=0, len = ins.length; i < len; i++) {
     if (_.isEqual(ins[i].className, 'wm-diff') && ins[i].childNodes.length > 0) {
-      ins[i].childNodes.forEach(function (child) {
-        const result = checkTimestampInLink(child);
-        addNotNill(foundIns, result);
-      });
+      addFoundElement(ins[i], foundIns);
     }
   }
 
@@ -152,18 +166,6 @@ function removeMarkup (node) {
   } else {
     let parentNode = node.parentNode;
     removeMarkup(parentNode);
-  }
-}
-
-function addNotNill (array, element) {
-  if (!_.isNil(element)) {
-    let url = getWBMCleanURL(element);
-    if (_.isNil(url)) {
-      url = getWBMCleanURL(element.parentNode.parentNode);
-    }
-    if (!_.isNil(url)) {
-      array.push([element, normalizeURL(url)]);
-    }
   }
 }
 
